@@ -1,0 +1,14 @@
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+	}
+}
+rootProject.name = 'certificate-management'
+
+gradle.ext {
+
+	apacheHttpComponentsVersion = '4.5.8'
+	bouncyCastleVersion = '1.62'
+	commonsIOVersion = '2.6'
+	commonsLang3Version = '3.6'
+}
