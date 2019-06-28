@@ -48,7 +48,7 @@ public class FileStorageService {
       Path targetLocation = this.fileStorageLocation.resolve(fileName);
       Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-      return fileName;
+      return org.apache.commons.lang3.StringUtils.join(fileStorageLocation.toString(), "/",fileName);
     } catch (IOException ex) {
       throw new FileStorageException("Could not store file " + fileName + ". Please try again!", ex);
     }

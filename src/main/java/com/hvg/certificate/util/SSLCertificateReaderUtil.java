@@ -1,11 +1,18 @@
 package com.hvg.certificate.util;
 
+import org.apache.commons.io.FileUtils;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.openssl.PEMParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.*;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -108,4 +115,31 @@ public class SSLCertificateReaderUtil {
 
     return certs;
   }
+
+  public static X509Certificate[] getCertificateDetailsFromPEM(String certFileLocation) throws IOException {
+
+    File file = new File(certFileLocation);
+    String certChainPEM = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+
+    List<X509Certificate> chain = new ArrayList<>();
+    try (PEMParser parser = new PEMParser(new StringReader(certChainPEM))) {
+
+      JcaX509CertificateConverter converter = new JcaX509CertificateConverter();
+      X509CertificateHolder certificateHolder;
+
+      while ((certificateHolder = (X509CertificateHolder) parser.readObject()) != null) {
+        chain.add(converter.getCertificate(certificateHolder));
+      }
+
+    } catch (IOException | CertificateException e) {
+      throw new RuntimeException("Failed to create certificate: " + certChainPEM, e);
+    }
+
+    if (chain.isEmpty()) {
+      throw new RuntimeException("A valid certificate was not found: " + certChainPEM);
+    }
+
+    return chain.toArray(new X509Certificate[chain.size()]);
+  }
+
 }
