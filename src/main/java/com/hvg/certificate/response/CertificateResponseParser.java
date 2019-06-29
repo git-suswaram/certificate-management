@@ -41,8 +41,8 @@ public class CertificateResponseParser {
         x509Certificate.getBasicConstraints()
         );
 
-      certificateType = x509Certificate.getBasicConstraints() == -1 ? "DOMAIN" :
-                          (!subjectDN.equals(issuerDN) ? "INTERMEDIATE" : "ROOT");
+      certificateType = subjectDN.equals(issuerDN) ? "ROOT" :
+                          (x509Certificate.getBasicConstraints() != -1 ? "INTERMEDIATE" : "DOMAIN");
 
       certificateInfo = new CertificateInfo(
         certificateType,
@@ -54,8 +54,7 @@ public class CertificateResponseParser {
         additionalProperties);
       certificateInfoList.add(certificateInfo);
     }
-    CertificateResponse certificateResponse = new CertificateResponse(certificateInfoList);
 
-    return certificateResponse;
+    return new CertificateResponse(certificateInfoList);
   }
 }

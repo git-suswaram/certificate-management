@@ -41,19 +41,20 @@ public class CertificateController {
   * */
 
   @PostMapping("/cert-contents")
-  public CertificateResponse getCertificateContents(@RequestParam("certFile") MultipartFile certFile) throws Exception {
+  public CertificateResponse getContentsFromDEREncodedCert(@RequestParam("certFile") MultipartFile certFile) throws Exception {
 
     String fileName = fileStorageService.storeFile(certFile);
-    X509Certificate x509Certificate = SSLCertificateUtil.readDetailsFromDEREncodedCertificate(fileName);
+    String certAsPEMString = SSLCertificateUtil.convertDERToPEM(fileName);
+    X509Certificate[] x509Certificates = SSLCertificateUtil.readDetailsFromPEMEncodedCertificate(certAsPEMString);
     return CertificateResponseParser
-             .parseResponse(new X509Certificate[]{x509Certificate});
+             .parseResponse(x509Certificates);
   }
 
   @PostMapping("/pem-contents")
-  public CertificateResponse getPemFileContents(@RequestParam("certFile") MultipartFile certFile) throws Exception {
+  public CertificateResponse getContentsFromPEMEncodedCert(@RequestParam("certFile") MultipartFile certFile) throws Exception {
 
     String fileName = fileStorageService.storeFile(certFile);
-    X509Certificate[] x509Certificate = SSLCertificateUtil.readDetailsFromPEMEncodedCertificate(fileName);
+    X509Certificate[] x509Certificate = SSLCertificateUtil.readDetailsFromPEMEncodedCertificateFile(fileName);
     return CertificateResponseParser
              .parseResponse(x509Certificate);
   }

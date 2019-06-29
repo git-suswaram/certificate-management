@@ -31,18 +31,8 @@ public class SSLCertificateUtil {
   private SSLCertificateUtil() {
   }
 
-  public static X509Certificate readDetailsFromDEREncodedCertificate(String certFileLocation)
-  throws Exception {
-    CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-    return (X509Certificate) certificateFactory
-                               .generateCertificate(new FileInputStream(certFileLocation));
-  }
-
-  public static X509Certificate[] readDetailsFromPEMEncodedCertificate(String certFileLocation)
+  public static X509Certificate[] readDetailsFromPEMEncodedCertificate(String certChainPEM)
   throws IOException {
-
-    File file = new File(certFileLocation);
-    String certChainPEM = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
 
     List<X509Certificate> chain = new ArrayList<>();
 
@@ -66,17 +56,41 @@ public class SSLCertificateUtil {
     return chain.toArray(new X509Certificate[chain.size()]);
   }
 
-  public Certificate[] extractCertificatesFromURL(String aURL) throws Exception {
+  public static Collection<? extends Certificate> readCertificatesFromFileAsCollection(String certFileLocation)
+  throws Exception {
 
-    URL destinationURL = new URL(aURL);
+    return SSLCertificateUtil.readCertificatesFromFileAsCollection(new File(certFileLocation));
+  }
 
-    HttpsURLConnection conn = (HttpsURLConnection) destinationURL.openConnection();
-    conn.connect();
+  public static Collection<? extends Certificate> readCertificatesFromFileAsCollection(File certificateFile)
+  throws Exception {
 
-    Certificate[] serverCertificates = conn.getServerCertificates();
-    log.info("nb = {}", serverCertificates.length);
+    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    return cf.generateCertificates(new FileInputStream(certificateFile));
+  }
 
-    return serverCertificates;
+  public static String convertDERToPEM(String certFileLocation)
+  throws Exception {
+
+    Collection<? extends Certificate> certificates = SSLCertificateUtil
+                                                       .readCertificatesFromFileAsCollection(certFileLocation);
+    return SSLCertificateUtil.convertDERToPEM(certificates);
+  }
+
+  public static String convertDERToPEM(Collection<? extends Certificate> x509Certs)
+  throws IOException {
+    StringWriter stringWriter = new StringWriter();
+
+    for (Certificate certificate : x509Certs) {
+
+      stringWriter = new StringWriter();
+
+      try (PemWriter pemWriter = new PemWriter(stringWriter)) {
+        PemObjectGenerator gen = new JcaMiscPEMGenerator(certificate);
+        pemWriter.writeObject(gen);
+      }
+    }
+    return stringWriter.toString();
   }
 
   public static List<X509Certificate> getCertListFromDefaultTrustStore()
@@ -130,43 +144,33 @@ public class SSLCertificateUtil {
     return x509Certificates;
   }
 
-
-
-  public static Collection<? extends Certificate> readCertificatesFromFileAsCollection(String certFileLocation)
-  throws Exception {
-
-    return SSLCertificateUtil.readCertificatesFromFileAsCollection(new File(certFileLocation));
-  }
-
-  public static Collection<? extends Certificate> readCertificatesFromFileAsCollection(File certificateFile)
-  throws Exception {
-
-    CertificateFactory cf = CertificateFactory.getInstance("X.509");
-    return cf.generateCertificates(new FileInputStream(certificateFile));
-  }
-
-  public static String convertX509CertToBase64PEMString(String certFileLocation)
-  throws Exception {
-
-    Collection<? extends Certificate> certificates = SSLCertificateUtil
-                                                       .readCertificatesFromFileAsCollection(certFileLocation);
-    return SSLCertificateUtil.convertX509CertToBase64PEMString(certificates);
-  }
-
-  public static String convertX509CertToBase64PEMString(Collection<? extends Certificate> x509Certs)
+  public static X509Certificate[] readDetailsFromPEMEncodedCertificateFile(String certFileLocation)
   throws IOException {
-    StringWriter stringWriter = new StringWriter();
 
-    for (Certificate certificate : x509Certs) {
+    File file = new File(certFileLocation);
+    String certChainPEM = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
 
-      stringWriter = new StringWriter();
+    return readDetailsFromPEMEncodedCertificate(certChainPEM);
+  }
 
-      try (PemWriter pemWriter = new PemWriter(stringWriter)) {
-        PemObjectGenerator gen = new JcaMiscPEMGenerator(certificate);
-        pemWriter.writeObject(gen);
-      }
-    }
-    return stringWriter.toString();
+  public static X509Certificate readDetailsFromDEREncodedCertificate(String certFileLocation)
+  throws Exception {
+    CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+    return (X509Certificate) certificateFactory
+                               .generateCertificate(new FileInputStream(certFileLocation));
+  }
+
+  public Certificate[] extractCertificatesFromURL(String aURL) throws Exception {
+
+    URL destinationURL = new URL(aURL);
+
+    HttpsURLConnection conn = (HttpsURLConnection) destinationURL.openConnection();
+    conn.connect();
+
+    Certificate[] serverCertificates = conn.getServerCertificates();
+    log.info("nb = {}", serverCertificates.length);
+
+    return serverCertificates;
   }
 
   public static void createCertFiles(X509Certificate x509Cert, String certType, int i, String destinationLocation)
