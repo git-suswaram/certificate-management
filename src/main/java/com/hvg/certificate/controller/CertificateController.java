@@ -1,8 +1,9 @@
 package com.hvg.certificate.controller;
 
 import com.hvg.certificate.response.CertificateResponse;
+import com.hvg.certificate.response.CertificateResponseParser;
 import com.hvg.certificate.service.FileStorageService;
-import com.hvg.certificate.util.SSLCertificateReaderUtil;
+import com.hvg.certificate.util.SSLCertificateUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,13 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.security.Security;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 public class CertificateController {
@@ -44,43 +41,20 @@ public class CertificateController {
   * */
 
   @PostMapping("/cert-contents")
-  public String getCertificateContents(@RequestParam("certFile") MultipartFile certFile) throws Exception {
+  public CertificateResponse getCertificateContents(@RequestParam("certFile") MultipartFile certFile) throws Exception {
 
     String fileName = fileStorageService.storeFile(certFile);
-    X509Certificate x509Certificate = SSLCertificateReaderUtil.readCertificateFromFile(fileName);
-    return x509Certificate.toString();
-
+    X509Certificate x509Certificate = SSLCertificateUtil.readDetailsFromDEREncodedCertificate(fileName);
+    return CertificateResponseParser
+             .parseResponse(new X509Certificate[]{x509Certificate});
   }
 
   @PostMapping("/pem-contents")
-  public String getPemFileContents(@RequestParam("certFile") MultipartFile certFile) throws Exception {
+  public CertificateResponse getPemFileContents(@RequestParam("certFile") MultipartFile certFile) throws Exception {
 
     String fileName = fileStorageService.storeFile(certFile);
-    X509Certificate[] x509Certificate = SSLCertificateReaderUtil.getCertificateDetailsFromPEM(fileName);
-    return x509Certificate.toString();
-
+    X509Certificate[] x509Certificate = SSLCertificateUtil.readDetailsFromPEMEncodedCertificate(fileName);
+    return CertificateResponseParser
+             .parseResponse(x509Certificate);
   }
-
-  @PostMapping("/uploadMultipleFiles")
-  public List<CertificateResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files) {
-    return Arrays.asList(files)
-                 .stream()
-                 .map(file -> uploadFile(file))
-                 .collect(Collectors.toList());
-  }
-
-  @PostMapping("/uploadFile")
-  public CertificateResponse uploadFile(@RequestParam("file") MultipartFile file) {
-
-    String fileName = fileStorageService.storeFile(file);
-
-    String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                                                        .path("/downloadFile/")
-                                                        .path(fileName)
-                                                        .toUriString();
-
-    return new CertificateResponse(fileName, fileDownloadUri,
-                                   file.getContentType(), file.getSize());
-  }
-
 }
