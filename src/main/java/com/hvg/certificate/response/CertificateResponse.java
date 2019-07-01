@@ -65,7 +65,7 @@ public class CertificateResponse {
     this.size = size;
   }
 
-  /*@Override
+  @Override
   public String toString() {
     return "CertificateResponse{" +
              "certificateInfoList=" + certificateInfoList +
@@ -74,6 +74,6 @@ public class CertificateResponse {
              ", fileType='" + fileType + '\'' +
              ", size=" + size +
              '}';
-  }*/
+  }
 }
 
