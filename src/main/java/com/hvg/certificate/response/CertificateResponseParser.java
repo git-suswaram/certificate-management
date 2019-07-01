@@ -35,7 +35,7 @@ public class CertificateResponseParser {
     x509CertificatePredicate = getX509CertificatePredicate(startDate, endDate, filter);
 
     List<X509Certificate> certificateList =
-      Arrays.asList(certificateRequest.getX509Certificate())
+      Arrays.asList(certificateRequest.getX509Certificates())
             .stream()
             .filter(x509CertificatePredicate)
             .collect(Collectors.toList());

@@ -1,15 +1,20 @@
 package com.hvg.certificate.response;
 
 import com.hvg.certificate.domain.CertificateInfo;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public class CertificateResponse {
   private List<CertificateInfo> certificateInfoList;
   private String fileName;
   private String fileDownloadUri;
   private String fileType;
   private long size;
+
+  public CertificateResponse(){
+  }
 
   public CertificateResponse(List<CertificateInfo> certificateInfoList,
                              String fileName, String fileDownloadUri,

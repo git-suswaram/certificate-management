@@ -1,30 +1,42 @@
 package com.hvg.certificate.request;
 
+import com.hvg.certificate.util.SSLCertificateUtil;
+
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
+
+import static com.hvg.certificate.util.SSLCertificateUtil.readDetailsFromPEMEncodedCertificate;
+import static com.hvg.certificate.util.SSLCertificateUtil.readDetailsFromPEMEncodedCertificateFile;
 
 public class CertificateRequestParser {
 
-  public static CertificateRequest parse(X509Certificate[] x509Certificates, Map<String, String> filterCriteriaMap)
-  throws ParseException {
+  public static CertificateRequest parse(CertificateRequestParamModel certificateRequestParamModel, String fileName)
+  throws Exception {
+
+    X509Certificate[] x509Certificates;
+
+    if ("PEM".equalsIgnoreCase(certificateRequestParamModel.getEncodingType())) {
+      x509Certificates = readDetailsFromPEMEncodedCertificateFile(fileName);
+    } else if ("DER".equalsIgnoreCase(certificateRequestParamModel.getEncodingType())) {
+      String certAsPEMString = SSLCertificateUtil.convertDERToPEM(fileName);
+      x509Certificates = readDetailsFromPEMEncodedCertificate(certAsPEMString);
+    } else {
+      throw new IllegalArgumentException("Invalid encoding type");
+    }
 
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy");
 
-    Date startDate = !filterCriteriaMap.get("START_DATE").isEmpty()
-                       ? simpleDateFormat.parse(filterCriteriaMap.get("START_DATE"))
+    Date startDate = !certificateRequestParamModel.getStartDate().isEmpty()
+                       ? simpleDateFormat.parse(certificateRequestParamModel.getStartDate())
                        : null;
 
-    Date endDate = !filterCriteriaMap.get("END_DATE").isEmpty()
-                     ? simpleDateFormat.parse(filterCriteriaMap.get("END_DATE"))
+    Date endDate = !certificateRequestParamModel.getEndDate().isEmpty()
+                     ? simpleDateFormat.parse(certificateRequestParamModel.getEndDate())
                      : null;
 
-    String filter = filterCriteriaMap.get("FILTER");
+    String filter = certificateRequestParamModel.getFilter();
 
-    CertificateRequest certificateRequest = new CertificateRequest(x509Certificates, filter, startDate, endDate);
-
-    return certificateRequest;
+    return new CertificateRequest(x509Certificates, filter, startDate, endDate);
   }
 }
